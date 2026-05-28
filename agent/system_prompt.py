@@ -34,6 +34,8 @@ from agent.prompt_builder import (
     KANBAN_GUIDANCE,
     MEMORY_GUIDANCE,
     OPENAI_MODEL_EXECUTION_GUIDANCE,
+    PARALLEL_TOOL_GUIDANCE,
+    PARALLEL_TOOL_MODELS,
     PLATFORM_HINTS,
     SESSION_SEARCH_GUIDANCE,
     SKILLS_GUIDANCE,
@@ -158,6 +160,11 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
             # paths, parallel tool calls, verify-before-edit, etc.)
             if "gemini" in _model_lower or "gemma" in _model_lower:
                 stable_parts.append(GOOGLE_MODEL_OPERATIONAL_GUIDANCE)
+            # Parallel-tool-calls nudge for non-Gemini batchable model
+            # families (deepseek, qwen, glm). Gemini/Gemma already receive
+            # this guidance bundled inside GOOGLE_MODEL_OPERATIONAL_GUIDANCE.
+            elif any(p in _model_lower for p in PARALLEL_TOOL_MODELS):
+                stable_parts.append(PARALLEL_TOOL_GUIDANCE)
             # OpenAI GPT/Codex execution discipline (tool persistence,
             # prerequisite checks, verification, anti-hallucination).
             # Also applied to xAI Grok — same failure modes (claims completion

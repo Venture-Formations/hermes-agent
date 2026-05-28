@@ -330,6 +330,23 @@ OPENAI_MODEL_EXECUTION_GUIDANCE = (
     "</missing_context>"
 )
 
+# Models that benefit from an explicit parallel-tool-calls nudge.
+# Gemini/Gemma get the same guidance bundled inside
+# GOOGLE_MODEL_OPERATIONAL_GUIDANCE and are intentionally excluded here.
+# GPT/Codex/Grok batch tool calls reliably without the nudge.
+PARALLEL_TOOL_MODELS = ("deepseek", "qwen", "glm")
+
+# Stand-alone parallel-tool-calls guidance for non-Gemini batchable models.
+# parallel_tool_calls=True on the API permits batched dispatch but the model
+# still chooses how many to emit; this hint lines the model up with the API.
+PARALLEL_TOOL_GUIDANCE = (
+    "# Parallel tool calls\n"
+    "When you need to perform multiple independent operations (e.g. reading "
+    "several files), make all the tool calls in a single response rather than "
+    "sequentially. Serial dispatch wastes a model round-trip per tool."
+)
+
+
 # Gemini/Gemma-specific operational guidance, adapted from OpenCode's gemini.txt.
 # Injected alongside TOOL_USE_ENFORCEMENT_GUIDANCE when the model is Gemini or Gemma.
 GOOGLE_MODEL_OPERATIONAL_GUIDANCE = (
