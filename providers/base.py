@@ -55,6 +55,7 @@ class ProviderProfile:
     models_url: str = ""  # explicit models endpoint; falls back to {base_url}/models
     auth_type: str = "api_key"   # api_key|oauth_device_code|oauth_external|copilot|aws_sdk
     supports_health_check: bool = True  # False → doctor skips /models probe for this provider
+    supports_parallel_tool_calls: bool = True  # False → transport omits parallel_tool_calls; some Anthropic-compat shims reject the field
 
     # ── Vision support ────────────────────────────────────────
     # True when the provider's API accepts image content inside
