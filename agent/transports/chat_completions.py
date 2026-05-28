@@ -282,6 +282,20 @@ class ChatCompletionsTransport(ProviderTransport):
             if is_moonshot_model(model):
                 tools = sanitize_moonshot_tools(tools)
             api_kwargs["tools"] = tools
+            # Permit batched tool dispatch on OpenAI-compatible aggregators.
+            # Legacy path is only reached for unregistered providers, so be
+            # conservative: enable only for flags we know accept the field.
+            if any(
+                params.get(flag, False)
+                for flag in (
+                    "is_openrouter",
+                    "is_nous",
+                    "is_github_models",
+                    "is_nvidia_nim",
+                    "is_qwen_portal",
+                )
+            ):
+                api_kwargs["parallel_tool_calls"] = True
 
         # max_tokens resolution — priority: ephemeral > user > provider default
         max_tokens_fn = params.get("max_tokens_param_fn")
@@ -470,6 +484,15 @@ class ChatCompletionsTransport(ProviderTransport):
             if is_moonshot_model(model):
                 tools = sanitize_moonshot_tools(tools)
             api_kwargs["tools"] = tools
+            # Let the model emit multiple tool_calls in a single response so
+            # downstream concurrent dispatch can batch them. Without this,
+            # the OpenAI SDK omits the field and many providers default to
+            # one tool per turn, producing serial round-trips per tool.
+            # Profiles can opt out by setting supports_parallel_tool_calls
+            # to False (e.g. Anthropic-via-OpenAI-compat shims that reject
+            # the field).
+            if getattr(profile, "supports_parallel_tool_calls", True):
+                api_kwargs["parallel_tool_calls"] = True
 
         # max_tokens resolution — priority: ephemeral > user > profile default
         max_tokens_fn = params.get("max_tokens_param_fn")
