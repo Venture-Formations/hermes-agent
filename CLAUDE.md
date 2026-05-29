@@ -43,7 +43,8 @@ main                                  ← tracks upstream NousResearch/hermes-ag
 fix/parallel-tool-calls-openrouter   ← 2 commits on top of upstream/main
                                         (used to draft the upstream PR)
 fix/parallel-tool-calls-v2026.5.16   ← 2 commits on top of tag v2026.5.16
-fix/parallel-tool-calls-v2026.5.28   ← 2 commits on top of tag v2026.5.28
+fix/parallel-tool-calls-v2026.5.28   ← 2 commits on top of tag v2026.5.28 (v0.15.0)
+fix/parallel-tool-calls-v2026.5.29   ← 2 commits on top of tag v2026.5.29 (v0.15.1)
                                         ← CURRENTLY DEPLOYED (per template Dockerfile)
 ```
 
