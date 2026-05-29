@@ -45,6 +45,7 @@ fix/parallel-tool-calls-openrouter   ← 2 commits on top of upstream/main
 fix/parallel-tool-calls-v2026.5.16   ← 2 commits on top of tag v2026.5.16
 fix/parallel-tool-calls-v2026.5.28   ← 2 commits on top of tag v2026.5.28 (v0.15.0)
 fix/parallel-tool-calls-v2026.5.29   ← 2 commits on top of tag v2026.5.29 (v0.15.1)
+fix/parallel-tool-calls-v2026.5.29.2 ← 2 commits on top of tag v2026.5.29.2 (v0.15.2)
                                         ← CURRENTLY DEPLOYED (per template Dockerfile)
 ```
 
