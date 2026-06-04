@@ -26,6 +26,11 @@ Two-line root cause:
 
 ## Our changes — 48 lines across 4 files
 
+> Machine-readable source of truth: [`.fork-modifications.yml`](./.fork-modifications.yml)
+> (keyed by stable logical id, with the marker each change leaves in the code).
+> It feeds the generated `hermes-workspace/MODIFICATIONS.md`, and the pre-commit
+> gate fails if a `marker` goes missing from its file after a cherry-pick.
+
 | File | What changed | Why |
 |---|---|---|
 | `providers/base.py` | Added `supports_parallel_tool_calls: bool = True` on `ProviderProfile` | Default-on with per-profile opt-out for any provider whose upstream rejects the field (e.g. Anthropic-via-OpenAI-compat shims) |

@@ -1,0 +1,50 @@
+# Source-of-truth metadata for the hermes-agent fork's modifications over upstream
+# (NousResearch/hermes-agent). Read by hermes-workspace/tools/gen-modifications.ts.
+#
+# Keyed by STABLE logical id, NOT commit SHA — each gbrain/hermes upgrade
+# cherry-picks these onto a new tag, minting new hashes. `last_applied_sha` is a
+# mutable record of the most recent cherry-pick; it is never the key.
+#
+# --check verifies, for each entry, that every file in `files` exists and the
+# `marker` string is present in it (the change survived the last cherry-pick).
+upstream: NousResearch/hermes-agent
+based_on_tag: "v2026.5.29"
+deployed_branch: "fix/parallel-tool-calls-v2026.5.29.2"   # v0.15.2
+
+modifications:
+  - id: parallel-tool-calls-transport
+    title: "Enable parallel_tool_calls on the chat_completions transport"
+    category: hermes-fork
+    risk: red
+    files:
+      - agent/transports/chat_completions.py
+      - providers/base.py
+    marker: "parallel_tool_calls"
+    why: >
+      The chat_completions transport never sent parallel_tool_calls, so providers
+      defaulted to one tool dispatch per response (~84% of completions ended in
+      tool_calls, median 5+ model calls per task). The Codex transport already set
+      it; this brings chat_completions to parity. providers/base.py adds a
+      ProviderProfile.supports_parallel_tool_calls flag for per-provider opt-out.
+    reapply: cherry-pick      # onto each new upstream tag
+    deprecate_when: "upstream merges parallel_tool_calls into the chat_completions transport"
+    added: "2026-05-28"
+    last_applied_sha: "2efa4654d9622a67c2e586c4989b793481499fdb"
+
+  - id: parallel-tool-guidance-prompt
+    title: "Nudge non-Gemini batchable models to parallel-dispatch tools"
+    category: hermes-fork
+    risk: red
+    files:
+      - agent/prompt_builder.py
+      - agent/system_prompt.py
+    marker: "PARALLEL_TOOL_GUIDANCE"
+    why: >
+      The API permits batched dispatch but the model chooses how many to emit.
+      PARALLEL_TOOL_GUIDANCE + PARALLEL_TOOL_MODELS (deepseek, qwen, glm) inject
+      guidance for non-Gemini batch-friendly models, adjacent to the existing
+      GOOGLE_MODEL_OPERATIONAL_GUIDANCE. Mirrors the codex transport precedent.
+    reapply: cherry-pick
+    deprecate_when: "upstream ships equivalent parallel-dispatch model guidance for non-Gemini models"
+    added: "2026-05-28"
+    last_applied_sha: "3cdb73f96a7b72961a53dcfa387b489a7385dace"
