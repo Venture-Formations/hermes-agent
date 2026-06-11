@@ -51,6 +51,7 @@ fix/parallel-tool-calls-v2026.5.16   ← 2 commits on top of tag v2026.5.16
 fix/parallel-tool-calls-v2026.5.28   ← 2 commits on top of tag v2026.5.28 (v0.15.0)
 fix/parallel-tool-calls-v2026.5.29   ← 2 commits on top of tag v2026.5.29 (v0.15.1)
 fix/parallel-tool-calls-v2026.5.29.2 ← 2 commits on top of tag v2026.5.29.2 (v0.15.2)
+fix/parallel-tool-calls-v2026.6.5    ← 2 commits on top of tag v2026.6.5 (v0.16.0)
                                         ← CURRENTLY DEPLOYED (per template Dockerfile)
 ```
 
