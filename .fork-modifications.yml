@@ -8,8 +8,8 @@
 # --check verifies, for each entry, that every file in `files` exists and the
 # `marker` string is present in it (the change survived the last cherry-pick).
 upstream: NousResearch/hermes-agent
-based_on_tag: "v2026.5.29"
-deployed_branch: "fix/parallel-tool-calls-v2026.5.29.2"   # v0.15.2
+based_on_tag: "v2026.6.5"
+deployed_branch: "fix/parallel-tool-calls-v2026.6.5"   # v0.16.0
 
 modifications:
   - id: parallel-tool-calls-transport
@@ -29,7 +29,7 @@ modifications:
     reapply: cherry-pick      # onto each new upstream tag
     deprecate_when: "upstream merges parallel_tool_calls into the chat_completions transport"
     added: "2026-05-28"
-    last_applied_sha: "2efa4654d9622a67c2e586c4989b793481499fdb"
+    last_applied_sha: "3da3aa9a8cee85d8e33423f231a475ae29697ae4"
 
   - id: parallel-tool-guidance-prompt
     title: "Nudge non-Gemini batchable models to parallel-dispatch tools"
@@ -47,4 +47,4 @@ modifications:
     reapply: cherry-pick
     deprecate_when: "upstream ships equivalent parallel-dispatch model guidance for non-Gemini models"
     added: "2026-05-28"
-    last_applied_sha: "3cdb73f96a7b72961a53dcfa387b489a7385dace"
+    last_applied_sha: "569ac6977153ffa1012c7609771cbb951a270302"
