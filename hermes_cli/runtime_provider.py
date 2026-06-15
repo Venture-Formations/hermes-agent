@@ -1352,6 +1352,24 @@ def resolve_runtime_provider(
     if explicit_runtime:
         return explicit_runtime
 
+    # [VF-FAIL-CLOSED-1] Earliest fail-closed guard. Under `auto`, provider
+    # resolving to `openrouter` means auto-detection chose the OpenRouter
+    # last-resort — i.e. the OAuth/subscription path is unavailable. Refuse it
+    # HERE, before the credential-pool return path below: an OpenRouter pool
+    # entry (when OPENROUTER_API_KEY is present) would otherwise return early and
+    # BYPASS the terminal guard. The terminal guard still covers the other case
+    # (a non-openrouter provider whose creds fail and falls through). Explicit
+    # provider requests (requested_provider != "auto") are handled above/below.
+    if requested_provider == "auto" and provider == "openrouter" and _fail_closed_enabled():
+        _notify_fail_closed("Auto-resolution selected the OpenRouter last-resort provider (subscription path unavailable).")
+        raise AuthError(
+            "FAIL-CLOSED (HERMES_OAUTH_FAIL_CLOSED): auto-resolution selected OpenRouter "
+            "because the xAI OAuth / subscription path is unavailable. Refusing the "
+            "OpenRouter fallback — chat fails intentionally rather than billing OpenRouter. "
+            "Restore xAI OAuth (`hermes proxy status` / re-auth) to recover, or unset "
+            "HERMES_OAUTH_FAIL_CLOSED to re-enable the OpenRouter safety net."
+        )
+
     should_use_pool = provider != "openrouter"
     if provider == "openrouter":
         cfg_provider = str(model_cfg.get("provider") or "").strip().lower()
