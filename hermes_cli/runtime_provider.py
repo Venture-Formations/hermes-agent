@@ -5,12 +5,60 @@ from __future__ import annotations
 import logging
 import os
 import re
+import subprocess
+import time
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 from hermes_cli import auth as auth_mod
 from agent.credential_pool import CredentialPool, PooledCredential, get_custom_provider_pool_key, load_pool
+
+
+# [VF-FAIL-CLOSED-1] Fail-closed OAuth-subscription routing.
+# This deployment routes all runtime chat through the operator's xAI OAuth /
+# SuperGrok subscription (provider: auto -> xai-oauth). resolve_runtime_provider()
+# below has a TERMINAL OpenRouter fallback that, on an xAI-OAuth outage under
+# `auto`, would SILENTLY bill OPENROUTER_API_KEY instead of failing. When
+# HERMES_OAUTH_FAIL_CLOSED is enabled, the runtime instead FAILS (raises AuthError)
+# and fires a loud notify.sh alert (Slack-if-configured + brain inbox), so an
+# outage is visible and never silently switches the billing/provider.
+def _fail_closed_enabled() -> bool:
+    return os.getenv("HERMES_OAUTH_FAIL_CLOSED", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _notify_fail_closed(reason: str) -> None:
+    """Best-effort, throttled (<=1 per 10 min) escalation that the OAuth
+    subscription path failed and we refused the OpenRouter fallback. Never raises."""
+    try:
+        stamp = "/tmp/hermes-oauth-failclosed.notified"
+        try:
+            if os.path.exists(stamp) and (time.time() - os.path.getmtime(stamp)) < 600:
+                return  # throttle: at most one alert per 10 minutes
+        except Exception:
+            pass
+        body = (
+            "xAI OAuth / SuperGrok subscription path is unavailable and "
+            "HERMES_OAUTH_FAIL_CLOSED is set, so the OpenRouter fallback was REFUSED. "
+            "Hermes chat will FAIL until the subscription recovers (check `hermes proxy "
+            "status` / re-auth xAI). " + reason
+        )
+        for notifier in ("/data/scripts/notify.sh", "/data/workspace/_ops/scripts/notify.sh"):
+            if os.path.exists(notifier):
+                subprocess.Popen(
+                    ["bash", notifier, "fail",
+                     "Hermes OAuth fail-closed (refused OpenRouter fallback)", body],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                break
+        try:
+            with open(stamp, "w") as _f:
+                _f.write("")
+        except Exception:
+            pass
+    except Exception:
+        pass
 from hermes_cli.auth import (
     AuthError,
     DEFAULT_CODEX_BASE_URL,
@@ -1679,6 +1727,22 @@ def resolve_runtime_provider(
             "requested_provider": requested_provider,
         }
 
+    # [VF-FAIL-CLOSED-1] Reaching the terminal OpenRouter fallback under `auto`
+    # means every preferred/subscription provider (incl. xai-oauth) was absent or
+    # failed — i.e. the OAuth subscription path is down. With fail-closed enabled,
+    # REFUSE the silent OpenRouter fallback: alert + raise, so chat fails loudly
+    # instead of quietly billing OpenRouter. An EXPLICIT provider request
+    # (requested_provider != "auto", e.g. the operator deliberately set openrouter)
+    # is honored as before.
+    if requested_provider == "auto" and _fail_closed_enabled():
+        _notify_fail_closed("Resolution fell through to the OpenRouter terminal fallback under provider=auto.")
+        raise AuthError(
+            "FAIL-CLOSED (HERMES_OAUTH_FAIL_CLOSED): the xAI OAuth / subscription "
+            "path is unavailable and the OpenRouter fallback is refused. Chat is "
+            "intentionally failing rather than billing OpenRouter. Restore xAI OAuth "
+            "(check `hermes proxy status` / re-auth) to recover, or unset "
+            "HERMES_OAUTH_FAIL_CLOSED to re-enable the OpenRouter safety net."
+        )
     runtime = _resolve_openrouter_runtime(
         requested_provider=requested_provider,
         explicit_api_key=explicit_api_key,
