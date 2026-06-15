@@ -48,3 +48,25 @@ modifications:
     deprecate_when: "upstream ships equivalent parallel-dispatch model guidance for non-Gemini models"
     added: "2026-05-28"
     last_applied_sha: "569ac6977153ffa1012c7609771cbb951a270302"
+
+  - id: oauth-fail-closed
+    title: "Fail-closed OAuth routing — refuse the silent OpenRouter fallback + alert"
+    category: hermes-fork
+    risk: red
+    files:
+      - hermes_cli/runtime_provider.py
+    marker: "VF-FAIL-CLOSED-1"
+    why: >
+      resolve_runtime_provider()'s terminal OpenRouter fallback would, on an
+      xAI-OAuth outage under provider=auto, SILENTLY bill OPENROUTER_API_KEY
+      instead of failing. This deployment routes all chat through the operator's
+      xAI OAuth / SuperGrok subscription, so that silent failover is unwanted.
+      With HERMES_OAUTH_FAIL_CLOSED enabled, reaching the terminal OpenRouter
+      fallback under `auto` raises AuthError (chat fails loudly) and fires a
+      throttled notify.sh alert (Slack-if-configured + brain inbox). An explicit
+      provider request (requested_provider != "auto") is unaffected. Safe-by-default:
+      env var unset = no-op. Gated by the HERMES_OAUTH_FAIL_CLOSED Railway var.
+    reapply: cherry-pick      # onto each new upstream tag, with the other fork commits
+    deprecate_when: "the operator stops routing all chat through a single OAuth subscription (re-enables OpenRouter as an intended provider), OR upstream adds a native fail-closed / no-fallback provider knob."
+    added: "2026-06-14"
+    last_applied_sha: "c65f61360c20bf9c0f3dc1a978d7d194ae125215"
